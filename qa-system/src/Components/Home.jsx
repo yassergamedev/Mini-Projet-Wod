@@ -1,12 +1,12 @@
-// Home.jsx
-
 import React, { useState } from 'react';
-import { Select, Button, Card } from 'antd';
+import { Select, Button, Card, message } from 'antd';
+import axios from 'axios';
 
 const { Option } = Select;
 
 const Home = () => {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
+  const [queryResult, setQueryResult] = useState(null);
 
   const questions = [
     "What is the capital of Algeria?",
@@ -25,7 +25,7 @@ const Home = () => {
   ];
   const sparqlQueries = [
     // What is the capital of Algeria? (Using OPTIONAL)
-    "SELECT ?capital WHERE { <http://dbpedia.org/resource/Algeria> <http://dbpedia.org/ontology/capital> ?capital . OPTIONAL { <http://dbpedia.org/resource/Algeria> <http://dbpedia.org/ontology/anotherProperty> ?anotherValue }}",
+    "SELECT ?capitalLabel WHERE { <http://dbpedia.org/resource/Algeria> <http://dbpedia.org/ontology/capital> ?capital . ?capital <http://www.w3.org/2000/01/rdf-schema#label> ?capitalLabel . FILTER(LANG(?capitalLabel) = 'en') OPTIONAL { <http://dbpedia.org/resource/Algeria> <http://dbpedia.org/ontology/anotherProperty> ?anotherValue } }",
   
     // List the official languages of Algeria. (Using FILTER)
     "SELECT ?language WHERE { <http://dbpedia.org/resource/Algeria> <http://dbpedia.org/ontology/language> ?language . FILTER(lang(?language) = 'en')}",
@@ -65,20 +65,47 @@ const Home = () => {
   ];
   
   
-  
-
   const handleQuestionChange = (value) => {
     setSelectedQuestion(value);
   };
 
-  const handleSearch = () => {
-    // Add your logic for sending SPARQL query based on the selected question
-    console.log(`Searching for: ${selectedQuestion}`);
+  const handleSearch = async () => {
+    try {
+      const selectedQuery = sparqlQueries[questions.indexOf(selectedQuestion)];
+
+      const response = await axios.post('https://dbpedia.org/sparql', null, {
+        params: {
+          query: selectedQuery,
+          format: 'application/json',
+        },
+      });
+
+      const resultBindings = response.data.results.bindings;
+
+      // Check if there are results
+      if (resultBindings.length > 0) {
+        // Extract the value from the first result
+        const currencyValue = resultBindings[0].currency.value;
+
+        // Do something with the extracted value, e.g., display it
+        console.log('Currency Value:', currencyValue);
+
+        // You can set the extracted value to state if needed
+        // setCurrencyValue(currencyValue);
+      } else {
+        // Handle case where there are no results
+        console.log('No results found.');
+        message.info('No results found.');
+      }
+    } catch (error) {
+      console.log('Error fetching data:', error);
+      message.error('Error fetching data. Please try again.');
+    }
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center',  height: '80%' }}>
-      <Card style={{ width: '600px',top: '40px', padding: '20px', textAlign: 'center' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', height: '80%' }}>
+      <Card style={{ width: '600px', top: '40px', padding: '20px', textAlign: 'center' }}>
         <h1 style={{ fontSize: '2em', marginBottom: '20px' }}>Q&A System Using Dbpedia and SPARQL</h1>
         <Select
           placeholder="Select a question"
@@ -91,9 +118,16 @@ const Home = () => {
             </Option>
           ))}
         </Select>
-        <Button style={{left : '10px'}} type="primary" size="small" onClick={handleSearch}>
+        <Button style={{ left: '10px' }} type="primary" size="small" onClick={handleSearch}>
           Search
         </Button>
+
+        {queryResult && (
+          <div style={{ marginTop: '20px' }}>
+            <h2>Query Result:</h2>
+            <pre>{JSON.stringify(queryResult, null, 2)}</pre>
+          </div>
+        )}
       </Card>
     </div>
   );
