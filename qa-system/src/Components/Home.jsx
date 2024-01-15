@@ -9,76 +9,71 @@ const Home = () => {
   const [queryResult, setQueryResult] = useState(null);
 
   const questions = [
-    // Using OPTIONAL
-    "What is the capital city of Algeria?",
-    "What is the population of Algeria?",
-    
-    // Using ORDER BY
-    "Which countries have the highest population according to the DBpedia database?",
-    
-    // Using LIMIT and OFFSET
-    "Can you name 10 cities from the DBpedia ontology?",
-    
-    // Using GROUP BY
-    "How many cities are associated with each country in the DBpedia database?",
-    
-    // Using UNION
-    "What are the capital cities of France and Germany?",
-    "What languages are spoken in Spain, and is there information about their populations?",
-    
-    // Using ORDER BY
-    "Which cities have the smallest populations according to the DBpedia database?",
-    
-    // Using LIMIT and OFFSET
-    "Provide a subset of countries, limited to 5, starting from the 11th country based on the DBpedia ontology.",
-    
-    // Using GROUP BY
-    "How many countries are there in each continent according to the DBpedia database?",
-    
-    // Using UNION
-    "What are the capital cities of Italy and the United Kingdom?",
-    
-    // Using FILTER
-    "Can you provide a list of people born after January 1, 1980, according to the DBpedia ontology?"
-  ];
+    // Question 1
+    'List 10 countries and their capitals.',
+ 
+    // Question 2
+    '10 rivers longer than 1000 km and their lengths,',
+ 
+    // Question 3
+    'birthplace and birth date of 10 presidents, ordered by birth date.',
+ 
+    // Question 4
+    ' 10 actors and their movies.',
+ 
+    // Question 5
+    'the population and area of 10 countries by continent.',
+ 
+    // Question 6
+    '10 universities and their locations.',
+ 
+    // Question 7
+    'Combine information about 10 cities and countries using UNION.',
+ 
+    // Question 8
+    '10 books and their authors by the publication date.',
+ 
+    // Question 9
+    'What are 10 Olympic sports and their events.',
+ 
+    // Question 10
+    'Give me 10 films and their genresd'
+ ];
+ 
   
 
   const sparqlQueries = [
-    // Using OPTIONAL
-    "SELECT ?capital ?population WHERE { <http://dbpedia.org/resource/Algeria> <http://dbpedia.org/ontology/capital> ?capital . OPTIONAL {    <http://dbpedia.org/resource/Algeria> <http://dbpedia.org/ontology/populationTotal> ?population . }}",
-  
-  
-    // Using ORDER BY
-    "SELECT ?country ?population WHERE { ?country a <http://dbpedia.org/ontology/Country> . ?country <http://dbpedia.org/ontology/populationTotal> ?population .}ORDER BY DESC(?population)",
-  
-    // Using LIMIT and OFFSET
-    "SELECT ?city WHERE { ?city a <http://dbpedia.org/ontology/City> .}LIMIT 10OFFSET 5",
-  
-    // Using GROUP BY
-    "SELECT ?country (COUNT(?city) AS ?cityCount) WHERE { ?country a <http://dbpedia.org/ontology/Country> . ?city <http://dbpedia.org/ontology/isPartOf> ?country .} GROUP BY ?country",
-  
-    // Using UNION
-    "SELECT ?capital WHERE { <http://dbpedia.org/resource/France> <http://dbpedia.org/ontology/capital> ?capital .} UNION {  <http://dbpedia.org/resource/Germany> <http://dbpedia.org/ontology/capital> ?capital .}",
-    "SELECT ?language ?population WHERE { <http://dbpedia.org/resource/Spain> <http://dbpedia.org/ontology/language> ?language . OPTIONAL { <http://dbpedia.org/resource/Spain> <http://dbpedia.org/ontology/populationTotal> ?population . }}",
+    // Question 1
+    'SELECT ?country ?capital WHERE { ?country a dbo:Country . OPTIONAL { ?country dbo:capital ?capital } } LIMIT 10',
+ 
+    // Question 2
+    'SELECT ?river ?length WHERE { ?river a dbo:River . OPTIONAL { ?river dbo:length ?length } FILTER (?length > 1000) } LIMIT 10',
+ 
+    // Question 3
+    'SELECT DISTINCT ?president ?birthplace ?birthdate WHERE { ?president a dbo:President . ?president dbo:birthPlace ?birthplace; dbo:birthDate ?birthdate . } ORDER BY ?birthdate LIMIT 10',
 
-  // Using ORDER BY
-  "SELECT ?city ?population WHERE { ?city a <http://dbpedia.org/ontology/City> . ?city <http://dbpedia.org/ontology/populationTotal> ?population .} ORDER BY ASC(?population)",
-
-  // Using LIMIT and OFFSET
-  "SELECT ?country WHERE { ?country a <http://dbpedia.org/ontology/Country> .} LIMIT 5 OFFSET 10",
-
-  // Using GROUP BY
-  "SELECT ?continent (COUNT(?country) AS ?countryCount) WHERE { ?country a <http://dbpedia.org/ontology/Country> . ?country <http://dbpedia.org/ontology/isPartOf> ?continent .} GROUP BY ?continent",
-
-  // Using UNION
-  "SELECT ?capital WHERE { <http://dbpedia.org/resource/Italy> <http://dbpedia.org/ontology/capital> ?capital .} UNION {  <http://dbpedia.org/resource/United_Kingdom> <http://dbpedia.org/ontology/capital> ?capital .}",
-
-  // Using FILTER
-  "SELECT ?person ?birthDate WHERE { ?person a <http://dbpedia.org/ontology/Person> . ?person <http://dbpedia.org/ontology/birthDate> ?birthDate . FILTER (?birthDate > '1980-01-01'^^xsd:date) }"
-
-  
-  
-  ];
+    // Question 4
+    'SELECT ?actor ?movie WHERE { ?actor a dbo:Actor . OPTIONAL { ?actor dbo:starring ?movie } } LIMIT 10',
+ 
+    // Question 5
+    'SELECT ?continent (SUM(?population) as ?totalPopulation) (SUM(?area) as ?totalArea) WHERE { ?country a dbo:Country . OPTIONAL { ?country dbo:population ?population; dbo:area ?area } ?country dbo:isPartOf ?continent . } GROUP BY ?continent LIMIT 10',
+ 
+    // Question 6
+    'SELECT ?university ?location WHERE { ?university a dbo:University . OPTIONAL { ?university dbo:location ?location } } LIMIT 10 OFFSET 5',
+ 
+    // Question 7
+    'SELECT ?place ?name WHERE { { ?place a dbo:City; dbo:name ?name } UNION { ?place a dbo:Country; dbo:commonName ?name } } LIMIT 10',
+ 
+    // Question 8
+    'SELECT ?book ?author ?publicationDate WHERE { ?book a dbo:Book . OPTIONAL { ?book dbo:author ?author; dbo:publicationDate ?publicationDate } } ORDER BY ?publicationDate LIMIT 10',
+ 
+    // Question 9
+    'SELECT ?sport ?event WHERE { ?sport a dbo:OlympicSport . OPTIONAL { ?sport dbo:hasEvent ?event } } LIMIT 10',
+ 
+    // Question 10
+    'SELECT ?film ?genre WHERE { ?film a dbo:Film . OPTIONAL { ?film dbo:genre ?genre } } LIMIT 10'
+ ];
+ 
   
   const handleQuestionChange = (value) => {
     setSelectedQuestion(value);
